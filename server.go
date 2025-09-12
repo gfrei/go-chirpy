@@ -25,7 +25,7 @@ func newServer() *http.Server {
 func addHandlers(mux *http.ServeMux, apiCfg *apiConfig) {
 	fsHandlerWithMetrics := apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir("."))))
 	mux.Handle("/app/", fsHandlerWithMetrics)
-	mux.HandleFunc("/healthz", readinessHandler)
-	mux.HandleFunc("/metrics", apiCfg.fileserverHitsCountHandler)
-	mux.HandleFunc("/reset", apiCfg.fileserverHitsResetHandler)
+	mux.HandleFunc("GET /api/healthz", readinessHandler)
+	mux.HandleFunc("GET /api/metrics", apiCfg.fileserverHitsCountHandler)
+	mux.HandleFunc("POST /api/reset", apiCfg.fileserverHitsResetHandler)
 }
