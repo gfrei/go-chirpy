@@ -31,9 +31,6 @@ func (cfg *apiConfig) fileserverHitsResetHandler(w http.ResponseWriter, req *htt
 }
 
 func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var dat []byte
-
 	type parameters struct {
 		Body string `json:"body"`
 	}
@@ -42,61 +39,54 @@ func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
 	params := parameters{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		dat, _ = getErrorJsonData("Something went wrong")
-		w.WriteHeader(400)
-		w.Write(dat)
+		respondWithJsonError(w, 400, "Something went wrong")
 		return
 	}
 
 	nilParams := params == parameters{}
 
 	if nilParams {
-		dat, _ = getErrorJsonData("Something went wrong")
-		w.WriteHeader(400)
-		w.Write(dat)
+		respondWithJsonError(w, 400, "Something went wrong")
 		return
 	}
 
 	if len(params.Body) > 140 {
-		dat, _ = getErrorJsonData("Chirp is too long")
-		w.WriteHeader(400)
-		w.Write(dat)
+		respondWithJsonError(w, 400, "Chirp is too long")
 		return
 	}
 
-	dat, _ = getOkJsonData()
-	w.WriteHeader(200)
-	w.Write(dat)
+	type jsonResponse struct {
+		Valid bool `json:"valid"`
+	}
+
+	respondWithJson(w, http.StatusOK, jsonResponse{
+		Valid: true,
+	})
 }
 
-type errorJson struct {
-	Error string `json:"error"`
-}
+func respondWithJsonError(w http.ResponseWriter, responseValue int, message string) {
+	type errorResponse struct {
+		Error string `json:"error"`
+	}
 
-func getErrorJsonData(message string) ([]byte, error) {
-	respBody := errorJson{
+	myError := errorResponse{
 		Error: message,
 	}
-	dat, err := json.Marshal(respBody)
-	if err != nil {
-		return nil, err
-	}
 
-	return dat, nil
+	respondWithJson(w, responseValue, myError)
 }
 
-type okJson struct {
-	Valid bool `json:"valid"`
-}
+func respondWithJson(w http.ResponseWriter, responseValue int, payload interface{}) error {
+	w.Header().Set("Content-Type", "application/json")
+	code := responseValue
 
-func getOkJsonData() ([]byte, error) {
-	respBody := okJson{
-		Valid: true,
-	}
-	dat, err := json.Marshal(respBody)
+	dat, err := json.Marshal(payload)
 	if err != nil {
-		return nil, err
+		code = 500
 	}
 
-	return dat, nil
+	w.WriteHeader(code)
+	w.Write(dat)
+
+	return err
 }
