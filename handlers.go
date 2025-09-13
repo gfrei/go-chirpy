@@ -35,23 +35,21 @@ func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
 		Body string `json:"body"`
 	}
 
-	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
-	if err != nil {
-		respondWithJsonError(w, 400, "Something went wrong")
+	dec := json.NewDecoder(req.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&params); err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return
 	}
 
-	nilParams := params == parameters{}
-
-	if nilParams {
-		respondWithJsonError(w, 400, "Something went wrong")
+	if len(params.Body) == 0 {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return
 	}
 
 	if len(params.Body) > 140 {
-		respondWithJsonError(w, 400, "Chirp is too long")
+		respondWithJsonError(w, http.StatusBadRequest, "Chirp is too long")
 		return
 	}
 
@@ -59,34 +57,27 @@ func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
 		Valid bool `json:"valid"`
 	}
 
-	respondWithJson(w, http.StatusOK, jsonResponse{
-		Valid: true,
-	})
+	respondWithJson(w, http.StatusOK, jsonResponse{Valid: true})
 }
 
-func respondWithJsonError(w http.ResponseWriter, responseValue int, message string) {
+func respondWithJsonError(w http.ResponseWriter, code int, message string) {
 	type errorResponse struct {
 		Error string `json:"error"`
 	}
 
-	myError := errorResponse{
-		Error: message,
-	}
-
-	respondWithJson(w, responseValue, myError)
+	respondWithJson(w, code, errorResponse{Error: message})
 }
 
-func respondWithJson(w http.ResponseWriter, responseValue int, payload interface{}) error {
+func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	code := responseValue
 
 	dat, err := json.Marshal(payload)
 	if err != nil {
-		code = 500
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{"error": "Something went wrong"})
+		return
 	}
 
 	w.WriteHeader(code)
 	w.Write(dat)
-
-	return err
 }
