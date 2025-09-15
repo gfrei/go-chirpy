@@ -26,9 +26,17 @@ func (cfg *apiConfig) fileserverHitsCountHandler(w http.ResponseWriter, req *htt
 
 func (cfg *apiConfig) fileserverHitsResetHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(200)
+
 	cfg.fileserverHits.Store(0)
-	w.Write([]byte(fmt.Sprintf("Reset Hits: %v", cfg.fileserverHits.Load())))
+	err := cfg.dbQueries.DeleteAllUsers(req.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Something went wrong"))
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Write([]byte(fmt.Sprintln("Reset Server")))
 }
 
 func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
