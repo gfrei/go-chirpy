@@ -27,6 +27,12 @@ func (cfg *apiConfig) fileserverHitsCountHandler(w http.ResponseWriter, req *htt
 func (cfg *apiConfig) fileserverHitsResetHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
+	if cfg.platform != "dev" {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write([]byte("Forbidden"))
+		return
+	}
+
 	cfg.fileserverHits.Store(0)
 	err := cfg.dbQueries.DeleteAllUsers(req.Context())
 	if err != nil {
