@@ -3,11 +3,14 @@ package main
 import (
 	"net/http"
 	"sync/atomic"
+
+	"github.com/gfrei/chirpy/internal/database"
 )
 
-func newServer() *http.Server {
+func newServer(dbQueries *database.Queries) *http.Server {
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
+		dbQueries:      dbQueries,
 	}
 
 	mux := http.NewServeMux()
