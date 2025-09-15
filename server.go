@@ -28,9 +28,11 @@ func newServer(dbQueries *database.Queries) *http.Server {
 func addHandlers(mux *http.ServeMux, apiCfg *apiConfig) {
 	fsHandlerWithMetrics := apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", http.FileServer(http.Dir("."))))
 	mux.Handle("/app/", fsHandlerWithMetrics)
-	mux.HandleFunc("GET /api/healthz", readinessHandler)
+
 	mux.HandleFunc("GET /admin/metrics", apiCfg.fileserverHitsCountHandler)
 	mux.HandleFunc("POST /admin/reset", apiCfg.fileserverHitsResetHandler)
-	mux.HandleFunc("POST /api/validate_chirp", validateChirpHandler)
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
+
+	mux.HandleFunc("GET /api/healthz", readinessHandler)
+	mux.HandleFunc("POST /api/validate_chirp", validateChirpHandler)
 }
