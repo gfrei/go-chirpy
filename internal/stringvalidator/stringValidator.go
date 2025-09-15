@@ -30,3 +30,27 @@ func (sv *StringValidator) Clean(msg string) string {
 
 	return newMsg
 }
+
+func StatelessClean(msg string, badWords []string) string {
+	badWordsMap := make(map[string]struct{})
+	for _, word := range badWords {
+		badWordsMap[strings.ToLower(word)] = struct{}{}
+	}
+
+	words := strings.Split(msg, " ")
+	newMsg := ""
+	for i, word := range words {
+		lower := strings.ToLower(word)
+		if _, ok := badWordsMap[lower]; ok {
+			newMsg += "****"
+		} else {
+			newMsg += word
+		}
+
+		if i < len(words)-1 {
+			newMsg += " "
+		}
+	}
+
+	return newMsg
+}
