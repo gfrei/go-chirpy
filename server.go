@@ -7,10 +7,11 @@ import (
 	"github.com/gfrei/chirpy/internal/database"
 )
 
-func newServer(dbQueries *database.Queries) *http.Server {
+func newServer(dbQueries *database.Queries, platform string) *http.Server {
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		dbQueries:      dbQueries,
+		platform:       platform,
 	}
 
 	mux := http.NewServeMux()
