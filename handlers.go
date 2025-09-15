@@ -33,13 +33,10 @@ func (cfg *apiConfig) fileserverHitsResetHandler(w http.ResponseWriter, req *htt
 }
 
 func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
-	type parameters struct {
+	params, err := decodeJson[struct {
 		Body string `json:"body"`
-	}
-
-	params := parameters{}
-	dec := json.NewDecoder(req.Body)
-	if err := dec.Decode(&params); err != nil {
+	}](req)
+	if err != nil {
 		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return
 	}
@@ -82,3 +79,15 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 	w.WriteHeader(code)
 	w.Write(dat)
 }
+
+func decodeJson[T any](req *http.Request) (T, error) {
+	var params T
+	dec := json.NewDecoder(req.Body)
+	if err := dec.Decode(&params); err != nil {
+		var zero T
+		return zero, fmt.Errorf("invalid JSON: %w", err)
+	}
+
+	return params, nil
+}
+
