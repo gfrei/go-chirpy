@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/gfrei/chirpy/internal/stringvalidator"
 )
 
 func readinessHandler(w http.ResponseWriter, req *http.Request) {
@@ -37,7 +39,6 @@ func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
 
 	params := parameters{}
 	dec := json.NewDecoder(req.Body)
-	dec.DisallowUnknownFields()
 	if err := dec.Decode(&params); err != nil {
 		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return
@@ -54,10 +55,10 @@ func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	type jsonResponse struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
-	respondWithJson(w, http.StatusOK, jsonResponse{Valid: true})
+	respondWithJson(w, http.StatusOK, jsonResponse{CleanedBody: stringvalidator.StatelessClean(params.Body, []string{"kerfuffle", "sharbert", "fornax"})})
 }
 
 func respondWithJsonError(w http.ResponseWriter, code int, message string) {
