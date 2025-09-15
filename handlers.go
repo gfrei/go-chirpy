@@ -56,3 +56,37 @@ func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
 
 	respondWithJson(w, http.StatusOK, jsonResponse{CleanedBody: stringvalidator.StatelessClean(params.Body, []string{"kerfuffle", "sharbert", "fornax"})})
 }
+
+func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request) {
+	type jsonParams struct {
+		Email string `json:"email"`
+	}
+
+	params, err := decodeJson[jsonParams](req)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	user, err := cfg.dbQueries.CreateUser(req.Context(), params.Email)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	type jsonResponse struct {
+		Id        string `json:"id"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+		Email     string `json:"email"`
+	}
+
+	resp := jsonResponse{
+		Id:        user.ID.String(),
+		CreatedAt: user.CreatedAt.GoString(),
+		UpdatedAt: user.UpdatedAt.GoString(),
+		Email:     user.Email,
+	}
+
+	respondWithJson(w, http.StatusCreated, resp)
+}
