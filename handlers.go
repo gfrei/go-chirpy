@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gfrei/chirpy/internal/stringvalidator"
+	"github.com/gfrei/chirpy/internal/database"
+	"github.com/google/uuid"
 )
 
 func readinessHandler(w http.ResponseWriter, req *http.Request) {
@@ -45,10 +46,13 @@ func (cfg *apiConfig) fileserverHitsResetHandler(w http.ResponseWriter, req *htt
 	w.Write([]byte(fmt.Sprintln("Reset Server")))
 }
 
-func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
-	params, err := decodeJson[struct {
-		Body string `json:"body"`
-	}](req)
+func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Request) {
+	type jsonReq struct {
+		Body   string    `json:"body"`
+		UserId uuid.UUID `json:"user_id"`
+	}
+
+	params, err := decodeJson[jsonReq](req)
 	if err != nil {
 		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return
@@ -64,11 +68,32 @@ func validateChirpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	type jsonResponse struct {
-		CleanedBody string `json:"cleaned_body"`
+	chirp, err := cfg.dbQueries.CreateChirp(req.Context(), database.CreateChirpParams{
+		UserID: params.UserId,
+		Body:   params.Body,
+	})
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
 	}
 
-	respondWithJson(w, http.StatusOK, jsonResponse{CleanedBody: stringvalidator.StatelessClean(params.Body, []string{"kerfuffle", "sharbert", "fornax"})})
+	type jsonResponse struct {
+		Id        uuid.UUID `json:"id"`
+		CreatedAt string    `json:"created_at"`
+		UpdatedAt string    `json:"updated_at"`
+		Body      string    `json:"body"`
+		UserId    uuid.UUID `json:"user_id"`
+	}
+
+	chirpJson := jsonResponse{
+		Id:        chirp.ID,
+		CreatedAt: chirp.CreatedAt.GoString(),
+		UpdatedAt: chirp.UpdatedAt.GoString(),
+		Body:      chirp.Body,
+		UserId:    chirp.UserID,
+	}
+
+	respondWithJson(w, http.StatusCreated, chirpJson)
 }
 
 func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request) {
