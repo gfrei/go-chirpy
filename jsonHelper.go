@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gfrei/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -14,6 +15,16 @@ type chirpJson struct {
 	UpdatedAt string    `json:"updated_at"`
 	Body      string    `json:"body"`
 	UserId    uuid.UUID `json:"user_id"`
+}
+
+func getChirpJson(chirp database.Chirp) chirpJson {
+	return chirpJson{
+		Id:        chirp.ID,
+		CreatedAt: chirp.CreatedAt.GoString(),
+		UpdatedAt: chirp.UpdatedAt.GoString(),
+		Body:      chirp.Body,
+		UserId:    chirp.UserID,
+	}
 }
 
 func respondWithJsonError(w http.ResponseWriter, code int, message string) {

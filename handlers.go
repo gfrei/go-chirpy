@@ -56,14 +56,7 @@ func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Reque
 	chirpsJson := make([]chirpJson, 0)
 
 	for _, chirp := range chirps {
-		chirpJson := chirpJson{
-			Id:        chirp.ID,
-			CreatedAt: chirp.CreatedAt.GoString(),
-			UpdatedAt: chirp.UpdatedAt.GoString(),
-			Body:      chirp.Body,
-			UserId:    chirp.UserID,
-		}
-
+		chirpJson := getChirpJson(chirp)
 		chirpsJson = append(chirpsJson, chirpJson)
 	}
 
@@ -101,13 +94,7 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	chirpJson := chirpJson{
-		Id:        chirp.ID,
-		CreatedAt: chirp.CreatedAt.GoString(),
-		UpdatedAt: chirp.UpdatedAt.GoString(),
-		Body:      chirp.Body,
-		UserId:    chirp.UserID,
-	}
+	chirpJson := getChirpJson(chirp)
 
 	respondWithJson(w, http.StatusCreated, chirpJson)
 }
