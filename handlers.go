@@ -46,6 +46,26 @@ func (cfg *apiConfig) fileserverHitsResetHandler(w http.ResponseWriter, req *htt
 	w.Write([]byte(fmt.Sprintln("Reset Server")))
 }
 
+func (cfg *apiConfig) getChirpHandler(w http.ResponseWriter, req *http.Request) {
+	chirpId := req.PathValue("id")
+
+	chirpUUID, err := uuid.Parse(chirpId)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	chirp, err := cfg.dbQueries.GetChirp(req.Context(), chirpUUID)
+	if err != nil {
+		respondWithJsonError(w, http.StatusNotFound, "Not found")
+		return
+	}
+
+	chirpJson := getChirpJson(chirp)
+
+	respondWithJson(w, http.StatusOK, chirpJson)
+}
+
 func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Request) {
 	chirps, err := cfg.dbQueries.GetAllChirps(req.Context())
 	if err != nil {

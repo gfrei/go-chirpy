@@ -35,6 +35,7 @@ func addHandlers(mux *http.ServeMux, apiCfg *apiConfig) {
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
 	mux.HandleFunc("POST /api/chirps", apiCfg.createChirpHandler)
 	mux.HandleFunc("GET /api/chirps", apiCfg.getAllChirpsHandler)
+	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.getChirpHandler)
 
 	mux.HandleFunc("GET /api/healthz", readinessHandler)
 }
