@@ -46,6 +46,30 @@ func (cfg *apiConfig) fileserverHitsResetHandler(w http.ResponseWriter, req *htt
 	w.Write([]byte(fmt.Sprintln("Reset Server")))
 }
 
+func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Request) {
+	chirps, err := cfg.dbQueries.GetAllChirps(req.Context())
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	chirpsJson := make([]chirpJson, 0)
+
+	for _, chirp := range chirps {
+		chirpJson := chirpJson{
+			Id:        chirp.ID,
+			CreatedAt: chirp.CreatedAt.GoString(),
+			UpdatedAt: chirp.UpdatedAt.GoString(),
+			Body:      chirp.Body,
+			UserId:    chirp.UserID,
+		}
+
+		chirpsJson = append(chirpsJson, chirpJson)
+	}
+
+	respondWithJson(w, http.StatusOK, chirpsJson)
+}
+
 func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Request) {
 	type jsonReq struct {
 		Body   string    `json:"body"`
@@ -77,15 +101,7 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	type jsonResponse struct {
-		Id        uuid.UUID `json:"id"`
-		CreatedAt string    `json:"created_at"`
-		UpdatedAt string    `json:"updated_at"`
-		Body      string    `json:"body"`
-		UserId    uuid.UUID `json:"user_id"`
-	}
-
-	chirpJson := jsonResponse{
+	chirpJson := chirpJson{
 		Id:        chirp.ID,
 		CreatedAt: chirp.CreatedAt.GoString(),
 		UpdatedAt: chirp.UpdatedAt.GoString(),
