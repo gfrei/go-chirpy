@@ -4,7 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/google/uuid"
 )
+
+type chirpJson struct {
+	Id        uuid.UUID `json:"id"`
+	CreatedAt string    `json:"created_at"`
+	UpdatedAt string    `json:"updated_at"`
+	Body      string    `json:"body"`
+	UserId    uuid.UUID `json:"user_id"`
+}
 
 func respondWithJsonError(w http.ResponseWriter, code int, message string) {
 	type errorResponse struct {
