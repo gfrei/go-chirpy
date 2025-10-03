@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gfrei/chirpy/internal/auth"
 	"github.com/gfrei/chirpy/internal/database"
 	"github.com/google/uuid"
 )
@@ -121,7 +122,8 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Reques
 
 func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request) {
 	type jsonParams struct {
-		Email string `json:"email"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 
 	params, err := decodeJson[jsonParams](req)
@@ -130,7 +132,16 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	user, err := cfg.dbQueries.CreateUser(req.Context(), params.Email)
+	hashedPassord, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	user, err := cfg.dbQueries.CreateUser(req.Context(), database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: hashedPassord,
+	})
 	if err != nil {
 		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return
