@@ -120,6 +120,46 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Reques
 	respondWithJson(w, http.StatusCreated, chirpJson)
 }
 
+func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, req *http.Request) {
+	type jsonParams struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	params, err := decodeJson[jsonParams](req)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	user, err := cfg.dbQueries.GetUserByEmail(req.Context(), params.Email)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Incorrect email or password")
+		return
+	}
+
+	err = auth.CheckPasswordHash(params.Password, user.HashedPassword)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Incorrect email or password")
+		return
+	}
+
+	type jsonResponse struct {
+		Id        string `json:"id"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+		Email     string `json:"email"`
+	}
+
+	resp := jsonResponse{
+		Id:        user.ID.String(),
+		CreatedAt: user.CreatedAt.GoString(),
+		UpdatedAt: user.UpdatedAt.GoString(),
+		Email:     user.Email,
+	}
+
+	respondWithJson(w, http.StatusOK, resp)
+}
+
 func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request) {
 	type jsonParams struct {
 		Email    string `json:"email"`
