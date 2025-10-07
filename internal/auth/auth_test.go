@@ -1,7 +1,11 @@
 package auth
 
 import (
+	"fmt"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestHashing(t *testing.T) {
@@ -18,5 +22,76 @@ func TestHashing(t *testing.T) {
 		return
 	} else {
 		t.Log("Hash Ok!")
+	}
+}
+
+func TestAuth(t *testing.T) {
+	type testCase struct {
+		userId              uuid.UUID
+		tokenSecret         string
+		tokenSecretValidate string
+		expiresIn           time.Duration
+		wait                time.Duration
+		expected            bool
+		description         string
+	}
+
+	cases := []testCase{
+		{
+			userId:              uuid.New(),
+			tokenSecret:         "secret",
+			tokenSecretValidate: "secret",
+			expiresIn:           1 * time.Second,
+			wait:                0 * time.Second,
+			description:         "accepted case",
+			expected:            true,
+		},
+		{
+			userId:              uuid.New(),
+			tokenSecret:         "secret",
+			tokenSecretValidate: "secret",
+			expiresIn:           100 * time.Millisecond,
+			wait:                200 * time.Millisecond,
+			description:         "timeout case",
+			expected:            false,
+		},
+		{
+			userId:              uuid.New(),
+			tokenSecret:         "secret",
+			tokenSecretValidate: "notsecret",
+			expiresIn:           2 * time.Second,
+			wait:                0 * time.Second,
+			description:         "wrong key case",
+			expected:            false,
+		},
+	}
+
+	for _, c := range cases {
+		token, err := MakeJWT(c.userId, c.tokenSecret, time.Duration(c.expiresIn))
+		if err != nil {
+			t.Errorf("Error on MakeJWT %v", err)
+		}
+
+		time.Sleep(c.wait)
+
+		uuid, err := ValidateJWT(token, c.tokenSecretValidate)
+		if err != nil {
+			s := fmt.Sprintf("test case: %s > JWT rejected: %v", c.description, err)
+			logResult(t, err, c.expected, s)
+		} else if c.userId != uuid {
+			s := fmt.Sprintf("test case: %s > UUID don't match %v\nexpected: %v\ngot: %v", c.description, err, c.userId, uuid)
+			logResult(t, err, c.expected, s)
+		} else {
+			s := fmt.Sprintf("test case: %s > JWT accepted", c.description)
+			logResult(t, err, c.expected, s)
+		}
+	}
+}
+
+func logResult(t *testing.T, err error, expected bool, msg string) {
+	if (err == nil && expected == true) || (err != nil && expected == false) {
+		t.Logf("Success! %v", msg)
+	} else {
+		t.Errorf("Failed! %v", msg)
 	}
 }
