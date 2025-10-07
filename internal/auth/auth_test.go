@@ -50,8 +50,8 @@ func TestAuth(t *testing.T) {
 			userId:              uuid.New(),
 			tokenSecret:         "secret",
 			tokenSecretValidate: "secret",
-			expiresIn:           100 * time.Millisecond,
-			wait:                200 * time.Millisecond,
+			expiresIn:           10 * time.Millisecond,
+			wait:                20 * time.Millisecond,
 			description:         "timeout case",
 			expected:            false,
 		},
@@ -59,7 +59,7 @@ func TestAuth(t *testing.T) {
 			userId:              uuid.New(),
 			tokenSecret:         "secret",
 			tokenSecretValidate: "notsecret",
-			expiresIn:           2 * time.Second,
+			expiresIn:           1 * time.Second,
 			wait:                0 * time.Second,
 			description:         "wrong key case",
 			expected:            false,
@@ -67,24 +67,27 @@ func TestAuth(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		token, err := MakeJWT(c.userId, c.tokenSecret, time.Duration(c.expiresIn))
-		if err != nil {
-			t.Errorf("Error on MakeJWT %v", err)
-		}
+		t.Run(c.description, func(t *testing.T) {
+			token, err := MakeJWT(c.userId, c.tokenSecret, c.expiresIn)
+			if err != nil {
+				t.Fatalf("Error on MakeJWT %v", err)
+			}
 
-		time.Sleep(c.wait)
+			time.Sleep(c.wait)
 
-		uuid, err := ValidateJWT(token, c.tokenSecretValidate)
-		if err != nil {
-			s := fmt.Sprintf("test case: %s > JWT rejected: %v", c.description, err)
-			logResult(t, err, c.expected, s)
-		} else if c.userId != uuid {
-			s := fmt.Sprintf("test case: %s > UUID don't match %v\nexpected: %v\ngot: %v", c.description, err, c.userId, uuid)
-			logResult(t, err, c.expected, s)
-		} else {
-			s := fmt.Sprintf("test case: %s > JWT accepted", c.description)
-			logResult(t, err, c.expected, s)
-		}
+			validatedID, err := ValidateJWT(token, c.tokenSecretValidate)
+
+			if err != nil {
+				s := fmt.Sprintf("test case: %s > JWT rejected: %v", c.description, err)
+				logResult(t, err, c.expected, s)
+			} else if c.userId != validatedID {
+				s := fmt.Sprintf("test case: %s > UUID don't match %v\nexpected: %v\ngot: %v", c.description, err, c.userId, validatedID)
+				logResult(t, err, c.expected, s)
+			} else {
+				s := fmt.Sprintf("test case: %s > JWT accepted", c.description)
+				logResult(t, err, c.expected, s)
+			}
+		})
 	}
 }
 
