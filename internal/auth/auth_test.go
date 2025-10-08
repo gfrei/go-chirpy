@@ -100,7 +100,7 @@ func logResult(t *testing.T, err error, expected bool, msg string) {
 	}
 }
 
-func Test_GetBearerToken(t *testing.T) {
+func Test_GetBearerToken_ValidToken(t *testing.T) {
 	header := http.Header{}
 
 	header.Add("Authorization", "Bearer TOKEN_STRING")
@@ -111,4 +111,15 @@ func Test_GetBearerToken(t *testing.T) {
 	}
 
 	t.Logf("ok! token: <%v>", token)
+}
+
+func Test_GetBearerToken_NotFound(t *testing.T) {
+	header := http.Header{}
+
+	header.Add("Authorization", "not a token here")
+
+	token, err := GetBearerToken(header)
+	if err == nil {
+		t.Errorf("Failed! Found 'Authorization' token: %v", token)
+	}
 }
