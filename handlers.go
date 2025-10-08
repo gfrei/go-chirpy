@@ -97,6 +97,12 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	_, err = auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
 	if len(params.Body) == 0 {
 		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return
