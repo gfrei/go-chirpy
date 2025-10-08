@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -97,4 +98,17 @@ func logResult(t *testing.T, err error, expected bool, msg string) {
 	} else {
 		t.Errorf("Failed! %v", msg)
 	}
+}
+
+func Test_GetBearerToken(t *testing.T) {
+	header := http.Header{}
+
+	header.Add("Authorization", "Bearer TOKEN_STRING")
+
+	token, err := GetBearerToken(header)
+	if err != nil {
+		t.Errorf("Failed! %v", err)
+	}
+
+	t.Logf("ok! token: <%v>", token)
 }
