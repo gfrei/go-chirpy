@@ -12,7 +12,7 @@ func newServer(dbQueries *database.Queries, platform, secret string) *http.Serve
 		fileserverHits: atomic.Int32{},
 		dbQueries:      dbQueries,
 		platform:       platform,
-		secret:         []byte(secret),
+		secret:         secret,
 	}
 
 	mux := http.NewServeMux()
