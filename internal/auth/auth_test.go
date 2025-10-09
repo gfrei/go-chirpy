@@ -123,3 +123,12 @@ func Test_GetBearerToken_NotFound(t *testing.T) {
 		t.Errorf("Failed! Found 'Authorization' token: %v", token)
 	}
 }
+
+func Test_MakeRefreshToken(t *testing.T) {
+	token, err := MakeRefreshToken()
+	if err != nil {
+		t.Errorf("Failed! Could not generate refresh token: %v", err)
+	}
+
+	t.Logf("generated token: %v", token)
+}
