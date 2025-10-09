@@ -87,8 +87,7 @@ func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Reque
 
 func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Request) {
 	type jsonReq struct {
-		Body   string    `json:"body"`
-		UserId uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}
 
 	params, err := decodeJson[jsonReq](req)
@@ -103,14 +102,14 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	_, err = auth.ValidateJWT(token, cfg.secret)
+	userId, err := auth.ValidateJWT(token, cfg.secret)
 	if err != nil {
 		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	if len(params.Body) == 0 {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		respondWithJsonError(w, http.StatusBadRequest, fmt.Sprintf("Something went wrong: %v", err))
 		return
 	}
 
@@ -120,11 +119,11 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Reques
 	}
 
 	chirp, err := cfg.dbQueries.CreateChirp(req.Context(), database.CreateChirpParams{
-		UserID: params.UserId,
+		UserID: userId,
 		Body:   params.Body,
 	})
 	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		respondWithJsonError(w, http.StatusBadRequest, fmt.Sprintf("Something went wrong: %v", err))
 		return
 	}
 
