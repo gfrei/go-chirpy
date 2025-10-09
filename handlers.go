@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gfrei/chirpy/internal/auth"
 	"github.com/gfrei/chirpy/internal/database"
@@ -160,20 +161,40 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	_, err = cfg.dbQueries.CreateRefreshToken(req.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    user.ID,
+		ExpiresAt: time.Now().Add(time.Hour * 24 * 60),
+	})
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
 	type jsonResponse struct {
-		Id        string `json:"id"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
-		Email     string `json:"email"`
-		Token     string `json:"token"`
+		Id           string `json:"id"`
+		CreatedAt    string `json:"created_at"`
+		UpdatedAt    string `json:"updated_at"`
+		Email        string `json:"email"`
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	resp := jsonResponse{
-		Id:        user.ID.String(),
-		CreatedAt: user.CreatedAt.GoString(),
-		UpdatedAt: user.UpdatedAt.GoString(),
-		Email:     user.Email,
-		Token:     token,
+		Id:           user.ID.String(),
+		CreatedAt:    user.CreatedAt.GoString(),
+		UpdatedAt:    user.UpdatedAt.GoString(),
+		Email:        user.Email,
+		Token:        token,
+		RefreshToken: refreshToken,
 	}
 
 	respondWithJson(w, http.StatusOK, resp)
