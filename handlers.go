@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gfrei/chirpy/internal/auth"
 	"github.com/gfrei/chirpy/internal/database"
@@ -134,9 +133,8 @@ func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Reques
 
 func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, req *http.Request) {
 	type jsonParams struct {
-		Email            string `json:"email"`
-		Password         string `json:"password"`
-		ExpiresInSeconds int    `json:"expires_in_seconds"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
 	params, err := decodeJson[jsonParams](req)
 	if err != nil {
@@ -156,11 +154,7 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	expiresInSeconds := params.ExpiresInSeconds
-	if expiresInSeconds == 0 || expiresInSeconds > 3600 {
-		expiresInSeconds = 3600
-	}
-	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Second*time.Duration(expiresInSeconds))
+	token, err := auth.MakeJWT(user.ID, cfg.secret)
 	if err != nil {
 		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -31,8 +30,6 @@ func TestAuth(t *testing.T) {
 		userId              uuid.UUID
 		tokenSecret         string
 		tokenSecretValidate string
-		expiresIn           time.Duration
-		wait                time.Duration
 		expected            bool
 		description         string
 	}
@@ -42,26 +39,13 @@ func TestAuth(t *testing.T) {
 			userId:              uuid.New(),
 			tokenSecret:         "secret",
 			tokenSecretValidate: "secret",
-			expiresIn:           1 * time.Second,
-			wait:                0 * time.Second,
 			description:         "accepted case",
 			expected:            true,
 		},
 		{
 			userId:              uuid.New(),
 			tokenSecret:         "secret",
-			tokenSecretValidate: "secret",
-			expiresIn:           10 * time.Millisecond,
-			wait:                20 * time.Millisecond,
-			description:         "timeout case",
-			expected:            false,
-		},
-		{
-			userId:              uuid.New(),
-			tokenSecret:         "secret",
 			tokenSecretValidate: "notsecret",
-			expiresIn:           1 * time.Second,
-			wait:                0 * time.Second,
 			description:         "wrong key case",
 			expected:            false,
 		},
@@ -69,12 +53,10 @@ func TestAuth(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.description, func(t *testing.T) {
-			token, err := MakeJWT(c.userId, c.tokenSecret, c.expiresIn)
+			token, err := MakeJWT(c.userId, c.tokenSecret)
 			if err != nil {
 				t.Fatalf("Error on MakeJWT %v", err)
 			}
-
-			time.Sleep(c.wait)
 
 			validatedID, err := ValidateJWT(token, c.tokenSecretValidate)
 
