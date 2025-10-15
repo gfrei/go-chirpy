@@ -200,6 +200,36 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, req *http.Request)
 	respondWithJson(w, http.StatusOK, resp)
 }
 
+func (cfg *apiConfig) refreshUserHandler(w http.ResponseWriter, req *http.Request) {
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	refreshToken, err := cfg.dbQueries.GetRefreshToken(req.Context(), token)
+	if err != nil || time.Now().Compare(refreshToken.ExpiresAt) > 0 {
+		respondWithJsonError(w, http.StatusUnauthorized, "Not found")
+		return
+	}
+
+	accessToken, err := auth.MakeJWT(refreshToken.UserID, cfg.secret)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	type jsonResponse struct {
+		Token string `json:"token"`
+	}
+
+	resp := jsonResponse{
+		Token: accessToken,
+	}
+
+	respondWithJson(w, http.StatusOK, resp)
+}
+
 func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request) {
 	type jsonParams struct {
 		Email    string `json:"email"`
