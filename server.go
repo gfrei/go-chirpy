@@ -34,6 +34,7 @@ func addHandlers(mux *http.ServeMux, apiCfg *apiConfig) {
 	mux.HandleFunc("GET /admin/metrics", apiCfg.fileserverHitsCountHandler)
 	mux.HandleFunc("POST /admin/reset", apiCfg.fileserverHitsResetHandler)
 	mux.HandleFunc("POST /api/users", apiCfg.createUserHandler)
+	mux.HandleFunc("PUT /api/users", apiCfg.updateUserHandler)
 	mux.HandleFunc("POST /api/login", apiCfg.loginUserHandler)
 	mux.HandleFunc("POST /api/refresh", apiCfg.refreshUserHandler)
 	mux.HandleFunc("POST /api/revoke", apiCfg.revokeAccessTokenHandler)

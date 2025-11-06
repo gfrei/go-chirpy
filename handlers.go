@@ -300,3 +300,67 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request
 
 	respondWithJson(w, http.StatusCreated, resp)
 }
+
+func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, req *http.Request) {
+	type jsonReq struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+
+	params, err := decodeJson[jsonReq](req)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	hashedPassord, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	err = cfg.dbQueries.UpdateUser(req.Context(), database.UpdateUserParams{
+		Email:          params.Email,
+		HashedPassword: hashedPassord,
+		UpdatedAt:      time.Now(),
+		ID:             userId,
+	})
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	user, err := cfg.dbQueries.GetUserById(req.Context(), userId)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	type jsonResponse struct {
+		Id        string `json:"id"`
+		CreatedAt string `json:"created_at"`
+		UpdatedAt string `json:"updated_at"`
+		Email     string `json:"email"`
+	}
+
+	resp := jsonResponse{
+		Id:        user.ID.String(),
+		CreatedAt: user.CreatedAt.GoString(),
+		UpdatedAt: user.UpdatedAt.GoString(),
+		Email:     user.Email,
+	}
+
+	respondWithJson(w, http.StatusOK, resp)
+}
