@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -208,7 +209,7 @@ func (cfg *apiConfig) refreshUserHandler(w http.ResponseWriter, req *http.Reques
 	}
 
 	refreshToken, err := cfg.dbQueries.GetRefreshToken(req.Context(), token)
-	if err != nil || time.Now().Compare(refreshToken.ExpiresAt) > 0 {
+	if err != nil || time.Now().Compare(refreshToken.ExpiresAt) > 0 || (refreshToken.RevokedAt.Valid && time.Now().Compare(refreshToken.RevokedAt.Time) > 0) {
 		respondWithJsonError(w, http.StatusUnauthorized, "Not found")
 		return
 	}
@@ -228,6 +229,32 @@ func (cfg *apiConfig) refreshUserHandler(w http.ResponseWriter, req *http.Reques
 	}
 
 	respondWithJson(w, http.StatusOK, resp)
+}
+
+func (cfg *apiConfig) revokeAccessTokenHandler(w http.ResponseWriter, req *http.Request) {
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	refreshToken, err := cfg.dbQueries.GetRefreshToken(req.Context(), token)
+	if err != nil || time.Now().Compare(refreshToken.ExpiresAt) > 0 {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	err = cfg.dbQueries.RevokeRefreshToken(req.Context(), database.RevokeRefreshTokenParams{
+		Token:     refreshToken.Token,
+		UpdatedAt: time.Now(),
+		RevokedAt: sql.NullTime{Time: time.Now(), Valid: true},
+	})
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request) {
