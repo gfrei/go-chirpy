@@ -69,6 +69,47 @@ func (cfg *apiConfig) getChirpHandler(w http.ResponseWriter, req *http.Request) 
 	respondWithJson(w, http.StatusOK, chirpJson)
 }
 
+func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, req *http.Request) {
+	chirpId := req.PathValue("chirpID")
+
+	chirpUUID, err := uuid.Parse(chirpId)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	chirp, err := cfg.dbQueries.GetChirp(req.Context(), chirpUUID)
+	if err != nil {
+		respondWithJsonError(w, http.StatusNotFound, "Not found")
+		return
+	}
+
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if chirp.UserID != userId {
+		respondWithJsonError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+
+	err = cfg.dbQueries.DeleteChirp(req.Context(), chirpUUID)
+	if err != nil {
+		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Request) {
 	chirps, err := cfg.dbQueries.GetAllChirps(req.Context())
 	if err != nil {
