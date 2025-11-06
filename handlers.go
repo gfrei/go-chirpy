@@ -331,18 +331,12 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	err = cfg.dbQueries.UpdateUser(req.Context(), database.UpdateUserParams{
+	user, err := cfg.dbQueries.UpdateUser(req.Context(), database.UpdateUserParams{
 		Email:          params.Email,
 		HashedPassword: hashedPassord,
 		UpdatedAt:      time.Now(),
 		ID:             userId,
 	})
-	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
-		return
-	}
-
-	user, err := cfg.dbQueries.GetUserById(req.Context(), userId)
 	if err != nil {
 		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 		return
