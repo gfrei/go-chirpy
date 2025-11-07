@@ -46,5 +46,7 @@ func addHandlers(mux *http.ServeMux, apiCfg *apiConfig) {
 	mux.HandleFunc("GET /api/chirps/{id}", apiCfg.getChirpHandler)
 	mux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.deleteChirpHandler)
 
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.polkaWebhookSetUserRedHandler)
+
 	mux.HandleFunc("GET /api/healthz", readinessHandler)
 }
