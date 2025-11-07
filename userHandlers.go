@@ -35,18 +35,12 @@ func (cfg *apiConfig) createUserHandler(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	type jsonResponse struct {
-		Id        string `json:"id"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
-		Email     string `json:"email"`
-	}
-
-	resp := jsonResponse{
-		Id:        user.ID.String(),
-		CreatedAt: user.CreatedAt.GoString(),
-		UpdatedAt: user.UpdatedAt.GoString(),
-		Email:     user.Email,
+	resp := userJson{
+		Id:          user.ID.String(),
+		CreatedAt:   user.CreatedAt.GoString(),
+		UpdatedAt:   user.UpdatedAt.GoString(),
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	respondWithJson(w, http.StatusCreated, resp)
@@ -93,18 +87,12 @@ func (cfg *apiConfig) updateUserHandler(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	type jsonResponse struct {
-		Id        string `json:"id"`
-		CreatedAt string `json:"created_at"`
-		UpdatedAt string `json:"updated_at"`
-		Email     string `json:"email"`
-	}
-
-	resp := jsonResponse{
-		Id:        user.ID.String(),
-		CreatedAt: user.CreatedAt.GoString(),
-		UpdatedAt: user.UpdatedAt.GoString(),
-		Email:     user.Email,
+	resp := userJson{
+		Id:          user.ID.String(),
+		CreatedAt:   user.CreatedAt.GoString(),
+		UpdatedAt:   user.UpdatedAt.GoString(),
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	respondWithJson(w, http.StatusOK, resp)
@@ -192,6 +180,7 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, req *http.Request)
 		CreatedAt    string `json:"created_at"`
 		UpdatedAt    string `json:"updated_at"`
 		Email        string `json:"email"`
+		IsChirpyRed  bool   `json:"is_chirpy_red"`
 		Token        string `json:"token"`
 		RefreshToken string `json:"refresh_token"`
 	}
@@ -201,6 +190,7 @@ func (cfg *apiConfig) loginUserHandler(w http.ResponseWriter, req *http.Request)
 		CreatedAt:    user.CreatedAt.GoString(),
 		UpdatedAt:    user.UpdatedAt.GoString(),
 		Email:        user.Email,
+		IsChirpyRed:  user.IsChirpyRed,
 		Token:        token,
 		RefreshToken: refreshToken,
 	}
