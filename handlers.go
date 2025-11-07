@@ -8,7 +8,6 @@ import (
 
 	"github.com/gfrei/chirpy/internal/auth"
 	"github.com/gfrei/chirpy/internal/database"
-	"github.com/google/uuid"
 )
 
 func readinessHandler(w http.ResponseWriter, req *http.Request) {
@@ -47,131 +46,6 @@ func (cfg *apiConfig) fileserverHitsResetHandler(w http.ResponseWriter, req *htt
 
 	w.WriteHeader(200)
 	w.Write([]byte(fmt.Sprintln("Reset Server")))
-}
-
-func (cfg *apiConfig) getChirpHandler(w http.ResponseWriter, req *http.Request) {
-	chirpId := req.PathValue("id")
-
-	chirpUUID, err := uuid.Parse(chirpId)
-	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
-		return
-	}
-
-	chirp, err := cfg.dbQueries.GetChirp(req.Context(), chirpUUID)
-	if err != nil {
-		respondWithJsonError(w, http.StatusNotFound, "Not found")
-		return
-	}
-
-	chirpJson := getChirpJson(chirp)
-
-	respondWithJson(w, http.StatusOK, chirpJson)
-}
-
-func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, req *http.Request) {
-	chirpId := req.PathValue("chirpID")
-
-	chirpUUID, err := uuid.Parse(chirpId)
-	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
-		return
-	}
-
-	chirp, err := cfg.dbQueries.GetChirp(req.Context(), chirpUUID)
-	if err != nil {
-		respondWithJsonError(w, http.StatusNotFound, "Not found")
-		return
-	}
-
-	token, err := auth.GetBearerToken(req.Header)
-	if err != nil {
-		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	userId, err := auth.ValidateJWT(token, cfg.secret)
-	if err != nil {
-		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	if chirp.UserID != userId {
-		respondWithJsonError(w, http.StatusForbidden, "Forbidden")
-		return
-	}
-
-	err = cfg.dbQueries.DeleteChirp(req.Context(), chirpUUID)
-	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Request) {
-	chirps, err := cfg.dbQueries.GetAllChirps(req.Context())
-	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
-		return
-	}
-
-	chirpsJson := make([]chirpJson, 0)
-
-	for _, chirp := range chirps {
-		chirpJson := getChirpJson(chirp)
-		chirpsJson = append(chirpsJson, chirpJson)
-	}
-
-	respondWithJson(w, http.StatusOK, chirpsJson)
-}
-
-func (cfg *apiConfig) createChirpHandler(w http.ResponseWriter, req *http.Request) {
-	type jsonReq struct {
-		Body string `json:"body"`
-	}
-
-	params, err := decodeJson[jsonReq](req)
-	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
-		return
-	}
-
-	token, err := auth.GetBearerToken(req.Header)
-	if err != nil {
-		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	userId, err := auth.ValidateJWT(token, cfg.secret)
-	if err != nil {
-		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
-		return
-	}
-
-	if len(params.Body) == 0 {
-		respondWithJsonError(w, http.StatusBadRequest, fmt.Sprintf("Something went wrong: %v", err))
-		return
-	}
-
-	if len(params.Body) > 140 {
-		respondWithJsonError(w, http.StatusBadRequest, "Chirp is too long")
-		return
-	}
-
-	chirp, err := cfg.dbQueries.CreateChirp(req.Context(), database.CreateChirpParams{
-		UserID: userId,
-		Body:   params.Body,
-	})
-	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, fmt.Sprintf("Something went wrong: %v", err))
-		return
-	}
-
-	chirpJson := getChirpJson(chirp)
-
-	respondWithJson(w, http.StatusCreated, chirpJson)
 }
 
 func (cfg *apiConfig) revokeAccessTokenHandler(w http.ResponseWriter, req *http.Request) {
