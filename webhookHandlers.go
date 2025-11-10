@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gfrei/chirpy/internal/auth"
 	"github.com/gfrei/chirpy/internal/database"
 	"github.com/google/uuid"
 )
@@ -14,6 +15,17 @@ func (cfg *apiConfig) polkaWebhookSetUserRedHandler(w http.ResponseWriter, req *
 		Data  struct {
 			UserId string `json:"user_id"`
 		} `json:"data"`
+	}
+
+	apiKey, err := auth.GetAPIKey(req.Header)
+	if err != nil {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	if apiKey != cfg.polkaKey {
+		respondWithJsonError(w, http.StatusUnauthorized, "Unauthorized")
+		return
 	}
 
 	params, err := decodeJson[jsonReq](req)
