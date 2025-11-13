@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"sort"
 
 	"github.com/gfrei/chirpy/internal/auth"
 	"github.com/gfrei/chirpy/internal/database"
@@ -71,14 +72,13 @@ func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, req *http.Reques
 }
 
 func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Request) {
-	s := req.URL.Query().Get("author_id")
-	fmt.Println(s)
+	authorId := req.URL.Query().Get("author_id")
 
 	var chirps []database.Chirp
 	var err error
 
-	if s != "" {
-		authorUUID, err := uuid.Parse(s)
+	if authorId != "" {
+		authorUUID, err := uuid.Parse(authorId)
 		if err != nil {
 			respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 			return
@@ -95,6 +95,11 @@ func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Reque
 			respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
 			return
 		}
+	}
+
+	sorting := req.URL.Query().Get("sort")
+	if sorting == "desc" {
+		sort.Slice(chirps, func(i, j int) bool { return chirps[i].CreatedAt.Compare(chirps[j].CreatedAt) > 0 })
 	}
 
 	chirpsJson := make([]chirpJson, 0)
