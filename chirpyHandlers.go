@@ -71,10 +71,30 @@ func (cfg *apiConfig) deleteChirpHandler(w http.ResponseWriter, req *http.Reques
 }
 
 func (cfg *apiConfig) getAllChirpsHandler(w http.ResponseWriter, req *http.Request) {
-	chirps, err := cfg.dbQueries.GetAllChirps(req.Context())
-	if err != nil {
-		respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
-		return
+	s := req.URL.Query().Get("author_id")
+	fmt.Println(s)
+
+	var chirps []database.Chirp
+	var err error
+
+	if s != "" {
+		authorUUID, err := uuid.Parse(s)
+		if err != nil {
+			respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+			return
+		}
+
+		chirps, err = cfg.dbQueries.GetAllChirpsFromUser(req.Context(), authorUUID)
+		if err != nil {
+			respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+			return
+		}
+	} else {
+		chirps, err = cfg.dbQueries.GetAllChirps(req.Context())
+		if err != nil {
+			respondWithJsonError(w, http.StatusBadRequest, "Something went wrong")
+			return
+		}
 	}
 
 	chirpsJson := make([]chirpJson, 0)
